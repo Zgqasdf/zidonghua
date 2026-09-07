@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动化编辑器 - 变量与数组插件可视化教程</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+        .wrapper { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 50px 20px 40px;
+            color: #fff;
+        }
+        .header h1 { font-size: 2.4em; margin-bottom: 10px; text-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .header .subtitle { font-size: 1.15em; opacity: 0.85; }
+
+        /* Nav */
+        .nav-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .nav-bar a {
+            color: #fff;
+            text-decoration: none;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            transition: all 0.25s;
+            backdrop-filter: blur(4px);
+        }
+        .nav-bar a:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+
+        /* Section */
+        .section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .section h2 {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            padding-left: 14px;
+            border-left: 5px solid #667eea;
+            color: #2c3e50;
+        }
+        .section h2.green { border-left-color: #27ae60; }
+        .section h2.orange { border-left-color: #f39c12; }
+        .section h2.red { border-left-color: #e74c3c; }
+        .section h2.teal { border-left-color: #00b894; }
+
+        .section-num {
+            display: inline-block;
+            background: #667eea;
+            color: #fff;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            text-align: center; line-height: 30px;
+            font-size: 14px; margin-right: 6px;
+        }
+        .section-num.green { background: #27ae60; }
+        .section-num.orange { background: #f39c12; }
+        .section-num.red { background: #e74c3c; }
+        .section-num.teal { background: #00b894; }
+
+        .desc {
+            color: #555;
+            line-height: 1.8;
+            margin: 12px 0 20px;
+            background: #f8f9fc;
+            padding: 14px 18px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            font-size: 14px;
+        }
+        .desc.green { border-left-color: #27ae60; background: #f6fbf7; }
+        .desc.orange { border-left-color: #f39c12; background: #fff9f0; }
+        .desc.red { border-left-color: #e74c3c; background: #fdf6f6; }
+        .desc code {
+            background: #eef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #667eea;
+        }
+        .desc.green code { background: #e8f5e9; color: #27ae60; }
+        .desc strong { color: #2c3e50; }
+
+        /* Paper Box (Variable Visual) - 盖子贴标签，不遮挡 */
+        .box-demo { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+        .box-container { text-align: center; }
+
+        .paper-box {
+            width: 300px; height: 200px;
+            border: 4px solid #667eea;
+            border-radius: 10px;
+            margin: 20px auto 0;
+            background: linear-gradient(135deg, #f8f9fc, #eef0f6);
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+            padding-top: 34px;
+        }
+        .paper-box::before {
+            content: "";
+            position: absolute; top: -18px; left: 50%;
+            transform: translateX(-50%);
+            width: 70%; height: 18px;
+            background: #667eea;
+            border-radius: 6px 6px 0 0;
+        }
+        /* 盖子上的名字贴纸 */
+        .box-name-tag {
+            position: absolute;
+            top: -12px; left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 3px 14px;
+            border-radius: 14px;
+            border: 2px solid #667eea;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            white-space: nowrap;
+            z-index: 5;
+        }
+        .paper-note {
+            background: #fff9c4;
+            padding: 14px 28px;
+            border-radius: 4px;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+            font-size: 18px; font-weight: bold;
+            color: #1976d2; min-width: 80px;
+            text-align: center;
+            transition: all 0.35s;
+            animation: noteIn 0.3s ease;
+        }
+        @keyframes noteIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .paper-note.empty { color: #aaa; font-size: 13px; background: #eee; font-weight: normal; }
+
+        /* Buttons & Inputs */
+        .controls { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        .input-row { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+
+        button {
+            padding: 8px 16px; border: none; border-radius: 8px;
+            background: #667eea; color: #fff; cursor: pointer;
+            font-size: 13px; transition: all 0.2s;
+        }
+        button:hover { background: #5a6fd6; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(102,126,234,0.3); }
+        button.green { background: #27ae60; } button.green:hover { background: #229954; box-shadow: 0 3px 10px rgba(39,174,96,0.3); }
+        button.orange { background: #f39c12; } button.orange:hover { background: #e67e22; }
+        button.red { background: #e74c3c; } button.red:hover { background: #c0392b; }
+        button.purple { background: #9b59b6; } button.purple:hover { background: #8e44ad; }
+        button.teal { background: #00b894; } button.teal:hover { background: #00a383; }
+        button.gray { background: #95a5a6; } button.gray:hover { background: #7f8c8d; }
+
+        input, select {
+            padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px;
+            font-size: 13px; width: 130px; transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: #667eea; outline: none; }
+        input[type="number"] { width: 100px; }
+
+        /* Value Display */
+        .value-display {
+            margin-top: 14px; text-align: center;
+            font-family: monospace; font-size: 14px;
+            color: #2c3e50; background: #f0f2f5;
+            padding: 10px 16px; border-radius: 8px;
+        }
+        .value-display span { color: #e74c3c; font-weight: bold; }
+        .value-display .label { color: #7f8c8d; }
+
+        /* Variable Cards */
+        .var-card-grid { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+        .var-card {
+            background: #f8f9fc; border: 2px solid #667eea;
+            border-radius: 12px; padding: 16px; min-width: 200px;
+            text-align: center; transition: all 0.3s; position: relative;
+        }
+        .var-card:hover { box-shadow: 0 4px 15px rgba(102,126,234,0.2); }
+        .var-card .var-type-tag {
+            position: absolute; top: -9px; left: 12px;
+            background: #667eea; color: #fff;
+            font-size: 11px; padding: 1px 10px; border-radius: 10px;
+        }
+        .var-card .var-type-tag.random { background: #9b59b6; }
+        .var-card .var-name {
+            font-size: 15px; font-weight: bold; color: #667eea;
+            margin-bottom: 6px;
+        }
+        .var-card .var-value-box {
+            background: #fff9c4; padding: 8px 14px; border-radius: 6px;
+            font-size: 16px; font-weight: bold; color: #1976d2;
+            margin: 8px 0; min-height: 34px; display: flex;
+            align-items: center; justify-content: center;
+        }
+        .var-card .var-value-box.empty { color: #aaa; background: #f0f0f0; font-weight: normal; font-size: 13px; }
+        .var-card .var-actions { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+        .var-card input { width: 100%; margin-bottom: 6px; }
+
+        /* Modal - 仿编辑器新建变量面板 */
+        .modal-mask {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            display: none; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-mask.show { display: flex; }
+        .modal {
+            background: #fff; border-radius: 14px; width: 92%; max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;
+            animation: modalIn 0.25s ease;
+        }
+        @keyframes modalIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-head {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; padding: 14px 18px; font-size: 16px; font-weight: bold;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-close { cursor: pointer; font-size: 20px; opacity: 0.8; background: none; border: none; color: #fff; padding: 0 4px; }
+        .modal-close:hover { opacity: 1; }
+        .modal-body { padding: 20px 18px; }
+        .modal-row { margin-bottom: 16px; }
+        .modal-row > label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; font-weight: bold; }
+        .modal-row .type-options { display: flex; gap: 8px; }
+        .type-option {
+            flex: 1; text-align: center; padding: 8px 0; border-radius: 8px;
+            border: 2px solid #e0e0e0; color: #666; cursor: pointer; font-size: 13px;
+            transition: all 0.2s; background: #fff;
+        }
+        .type-option.active { border-color: #667eea; color: #667eea; background: #eef1ff; font-weight: bold; }
+        .modal-row .scope-options { display: flex; gap: 8px; }
+        .scope-option {
+            flex: 1; text-align: center; padding: 8px 0; border-radius: 8px;
+            border: 2px solid #e0e0e0; color: #666; cursor: pointer; font-size: 13px;
+            transition: all 0.2s; background: #fff;
+        }
+        .scope-option.active { border-color: #667eea; color: #667eea; background: #eef1ff; font-weight: bold; }
+        .modal-row input { width: 100%; }
+        .modal-foot { padding: 14px 18px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-foot .cancel-btn { background: #fff; color: #666; border: 1px solid #ddd; }
+        .modal-foot .cancel-btn:hover { background: #f5f5f5; box-shadow: none; }
+        .rand-range { display: none; gap: 8px; margin-top: 8px; align-items: center; }
+        .rand-range.show { display: flex; }
+        .rand-range label { font-size: 12px; color: #999; }
+        .rand-range input { width: 80px; }
+
+        /* Condition Flow */
+        .flow-container {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0; flex-wrap: wrap; margin: 20px 0;
+        }
+        .flow-step {
+            padding: 14px 20px; border-radius: 10px;
+            text-align: center; font-size: 13px;
+            transition: all 0.3s; min-width: 120px;
+        }
+        .flow-step.condition { background: #fff3e0; border: 2px solid #f39c12; color: #e67e22; }
+        .flow-step.action { background: #e8f5e9; border: 2px solid #27ae60; color: #27ae60; }
+        .flow-step.skip { background: #fce4ec; border: 2px solid #e74c3c; color: #e74c3c; }
+        .flow-arrow { font-size: 24px; color: #bbb; padding: 0 6px; }
+        .flow-step.active { transform: scale(1.05); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .flow-result {
+            text-align: center; margin-top: 16px; font-size: 15px;
+            font-weight: bold; padding: 12px; border-radius: 8px;
+        }
+        .flow-result.success { background: #e8f5e9; color: #27ae60; }
+        .flow-result.fail { background: #fce4ec; color: #e74c3c; }
+
+        /* Array Box - 动态格子（真隔板：绿色背景=隔板，白色格子=隔间） */
+        .array-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+            gap: 3px;
+            border: 3px solid #27ae60; border-radius: 12px;
+            margin: 20px auto 0; background: #27ae60; position: relative;
+            max-width: 750px; padding: 3px;
+        }
+        .array-box::before {
+            content: ""; position: absolute; top: -18px; left: 50%;
+            transform: translateX(-50%); width: 45%; height: 18px;
+            background: #27ae60; border-radius: 6px 6px 0 0;
+        }
+        .array-name-tag {
+            position: absolute; top: -12px; left: 50%;
+            transform: translateX(-50%);
+            background: #fff; color: #27ae60; font-weight: bold; font-size: 13px;
+            padding: 3px 14px; border-radius: 14px; border: 2px solid #27ae60;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; z-index: 5;
+        }
+        .array-cell {
+            background: #fff; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; padding: 20px 4px 8px;
+            min-height: 62px;
+        }
+        .array-cell .index {
+            position: absolute; top: 4px; left: 50%;
+            transform: translateX(-50%); font-size: 11px;
+            color: #27ae60; font-weight: bold;
+        }
+        .array-cell .paper-note { font-size: 14px; padding: 6px 10px; min-width: 40px; }
+        .array-cell.highlight { background: #e8f5e9; }
+        .array-cell.highlight-insert { background: #fff3e0; }
+
+        /* Array Function Tabs */
+        .func-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+        .func-tab {
+            padding: 6px 14px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; border: 2px solid #e0e0e0; background: #f8f9fc;
+            color: #666; transition: all 0.2s;
+        }
+        .func-tab:hover { border-color: #27ae60; color: #27ae60; }
+        .func-tab.active { background: #27ae60; color: #fff; border-color: #27ae60; }
+
+        .func-panel {
+            display: none; background: #f6fbf7; border-radius: 10px;
+            padding: 18px; border: 1px solid #d4edda;
+        }
+        .func-panel.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .func-desc { color: #555; font-size: 13px; margin-bottom: 12px; line-height: 1.6; }
+        .func-desc code { background: #e8f5e9; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #27ae60; }
+
+        .func-input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+        .func-input-row label { font-size: 13px; color: #666; min-width: 70px; }
+        .pos-hint { font-size: 11px; color: #999; background: #eef1ff; padding: 2px 8px; border-radius: 10px; }
+        .func-result {
+            margin-top: 10px; padding: 10px 14px; border-radius: 8px;
+            font-size: 14px; font-family: monospace;
+        }
+        .func-result.success { background: #d4edda; color: #155724; }
+        .func-result.error { background: #f8d7da; color: #721c24; }
+        .func-result.info { background: #d1ecf1; color: #0c5460; }
+
+        .before-after { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .before-after > div { flex: 1; min-width: 250px; }
+        .before-after .ba-label { font-size: 12px; color: #999; margin-bottom: 4px; text-align: center; }
+        .before-after .ba-value {
+            font-family: monospace; font-size: 14px; text-align: center;
+            padding: 10px; border-radius: 8px; background: #f0f2f5; color: #333;
+            word-break: break-all;
+        }
+        .before-after .ba-value.changed { background: #fff3e0; color: #e67e22; }
+
+        /* Task Demo */
+        .task-grid { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .task-item {
+            background: #f8f9fc; border: 2px solid #ddd; border-radius: 12px;
+            padding: 20px; text-align: center; min-width: 140px; transition: all 0.3s;
+        }
+        .task-item.done { border-color: #27ae60; background: #e8f5e9; }
+        .task-item.done .task-icon { color: #27ae60; }
+        .task-icon { font-size: 32px; margin-bottom: 8px; color: #ccc; }
+        .task-name { font-size: 14px; font-weight: bold; color: #555; }
+        .task-status { font-size: 12px; color: #999; margin-top: 4px; }
+        .task-item.done .task-status { color: #27ae60; }
+
+        /* Code Block */
+        .code-block {
+            background: #2d2d2d; color: #f8f8f2; border-radius: 8px;
+            padding: 14px 18px; font-family: monospace; font-size: 13px;
+            line-height: 1.7; margin-top: 12px; overflow-x: auto;
+        }
+        .code-block .kw { color: #ff79c6; }
+        .code-block .str { color: #f1fa8c; }
+        .code-block .cm { color: #6272a4; }
+        .code-block .fn { color: #50fa7b; }
+        .code-block .var-name { color: #8be9fd; }
+
+        /* Tip Box */
+        .tip-box {
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border-radius: 10px; padding: 14px 18px; margin: 12px 0;
+            font-size: 13px; color: #555; line-height: 1.7;
+            border-left: 4px solid #667eea;
+        }
+        .tip-box strong { color: #667eea; }
+
+        /* Footer */
+        .footer {
+            text-align: center; color: rgba(255,255,255,0.7);
+            font-size: 13px; padding: 30px 20px; line-height: 1.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .paper-box { width: 240px; height: 160px; }
+            .section { padding: 20px; }
+            .header h1 { font-size: 1.8em; }
+        }
+    </style>
+<style>@keyframes toastIn { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }</style></head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+    <h1>📦 自动化编辑器 - 变量与数组插件可视化教程</h1>
+    <p class="subtitle">用纸皮箱和纸条，零基础也能秒懂变量、条件判断与数组插件</p>
+</div>
+
+<div class="wrapper">
+
+<!-- Nav -->
+<div class="nav-bar">
+    <a href="#sec1">变量概念</a>
+    <a href="#sec2">变量管理</a>
+    <a href="#sec3">条件判断</a>
+    <a href="#sec4">数组变量</a>
+    <a href="#sec5">数组插件</a>
+    <a href="#sec6">实战演示</a>
+    <a href="#sec7">变量自增</a>
+</div>
+
+<!-- ===== SECTION 1: 什么是变量 ===== -->
+<div class="section" id="sec1">
+    <h2><span class="section-num">1</span>什么是变量？—— 一个快递纸皮箱</h2>
+    <div class="desc">
+        <strong>核心比喻：</strong>在自动化编辑器里，<strong>变量</strong>就像你家里的一个快递纸皮箱。<br>
+        <strong>箱子上贴的名字</strong>（比如"当前任务"）就是<strong>变量名</strong>，是你给这个箱子起的名字。<br>
+        <strong>箱子里放的纸条</strong>（比如写着"师门任务"）就是<strong>变量的值</strong>，是箱子里实际存的东西。<br>
+        你可以往箱子里放纸条（<strong>赋值</strong>）、看纸条写的啥（<strong>读取</strong>）、换掉纸条（<strong>修改</strong>）、把纸条拿走（<strong>清空</strong>）。
+    </div>
+    <div class="tip-box">
+        <strong>记忆口诀：</strong>眼睛看到的就是条件，手指按下的就是动作，脑子记住的就是变量！<br>
+        箱子名 = 变量名 | 纸条 = 变量值 | 看纸条 = 条件判断 | 换纸条 = 动作修改
+    </div>
+
+    <div class="box-demo">
+        <div class="box-container">
+            <div class="paper-box">
+                <div class="box-name-tag">📦 <span id="boxNameDisplay">当前任务</span></div>
+                <div class="paper-note empty" id="boxValue">空箱子</div>
+            </div>
+            <div class="value-display">
+                <span class="label">变量名：</span><span id="varNameShow" style="color:#667eea">当前任务</span> &nbsp;
+                <span class="label">值：</span><span id="varValueShow">空</span>
+            </div>
+            <div class="input-row">
+                <input type="text" id="boxNameInput" placeholder="给箱子起个名字" value="当前任务" style="width:120px">
+                <input type="text" id="boxValueInput" placeholder="纸条内容" value="师门任务" style="width:120px">
+            </div>
+            <div class="controls">
+                <button onclick="putNoteDemo()">放纸条</button>
+                <button class="orange" onclick="editNoteDemo()">换纸条</button>
+                <button class="red" onclick="clearNoteDemo()">拿走纸条</button>
+                <button class="purple" onclick="renameBox()">改名</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="code-block">
+<span class="cm">// 对应自动化编辑器里的操作：</span>
+<span class="cm">// 放纸条 → 添加动作 → 变量 → 修改变量的值（变量名 = "当前任务"，值 = "师门任务"）</span>
+<span class="cm">// 看纸条 → 添加条件 → 变量控制 → 变量 当前任务 等于 师门任务</span>
+<span class="cm">// 换纸条 → 添加动作 → 变量 → 修改变量的值（值改为 "捉鬼任务"）</span>
+<span class="cm">// 拿走纸条 → 添加动作 → 变量 → 修改变量的值（值改为空）</span>
+    </div>
+</div>
+
+<!-- ===== SECTION 2: 变量管理面板 ===== -->
+<div class="section" id="sec2">
+    <h2><span class="section-num">2</span>变量管理面板 —— 像编辑器一样创建变量</h2>
+    <div class="desc">
+        实际脚本中你会用到很多变量。在自动化编辑器里，新建变量需要设置：<strong>类型</strong>（变量/随机）、<strong>名称</strong>、<strong>默认值</strong>、<strong>作用域</strong>（普通/本地/配置）。<br>
+        点击下面的"<strong>新建变量</strong>"按钮，弹出来的面板和编辑器里的一模一样，试试看！
+    </div>
+    <div class="input-row" style="justify-content:flex-start; margin-bottom:16px;">
+        <button class="green" onclick="openNewVarModal()">➕ 新建变量</button>
+        <button class="purple" onclick="fillExampleVars()">填充示例</button>
+    </div>
+    <div class="var-card-grid" id="varCardGrid"><p style="color:#999; text-align:center; width:100%; padding:20px;">还没有变量，点击"新建变量"创建一个试试吧！</p></div>
+    <div class="value-display" id="allVarsDisplay" style="margin-top:16px;">
+        <span class="label">所有变量：</span><span id="allVarsText">无</span>
+    </div>
+</div>
+
+<!-- ===== 新建变量弹窗（仿编辑器面板） ===== -->
+<div class="modal-mask" id="newVarModal">
+    <div class="modal">
+        <div class="modal-head">
+            <span>新建变量</span>
+            <button class="modal-close" onclick="closeNewVarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-row">
+                <label>类型</label>
+                <div class="type-options" id="varTypeOptions">
+                    <div class="type-option active" data-type="变量" onclick="selectVarType(this)">变量</div>
+                    <div class="type-option" data-type="随机" onclick="selectVarType(this)">随机</div>
+                </div>
+            </div>
+            <div class="modal-row">
+                <label>名称</label>
+                <input type="text" id="modalVarName" placeholder="变量名（如：当前任务）">
+            </div>
+            <div class="modal-row">
+                <label>默认值</label>
+                <input type="text" id="modalVarValue" placeholder="初始纸条内容（如：师门任务）">
+                <div class="rand-range" id="randRange">
+                    <label>最小：</label><input type="number" id="randMin" value="1">
+                    <label>最大：</label><input type="number" id="randMax" value="10">
+                </div>
+            </div>
+            <div class="modal-row">
+                <label>作用域</label>
+                <div class="scope-options">
+                    <div class="scope-option active" onclick="selectScope(this)">普通</div>
+                    <div class="scope-option" onclick="selectScope(this)">本地</div>
+                    <div class="scope-option" onclick="selectScope(this)">配置</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="cancel-btn" onclick="closeNewVarModal()">取消</button>
+            <button class="green" onclick="confirmNewVar()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SECTION 3: 变量作为条件判断 ===== -->
+<div class="section" id="sec3">
+    <h2><span class="section-num orange">3</span>变量作为条件 —— 看纸条写的什么字</h2>
+    <div class="desc orange">
+        <strong>核心概念：</strong>自动化编辑器里，每个事件都需要<strong>条件</strong>和<strong>动作</strong>。<br>
+        条件就是"眼睛看到纸皮箱里写的什么字"，比如：变量"当前任务"等于"师门任务"。<br>
+        如果条件成立（纸条确实写着"师门任务"），就执行对应的动作（比如点击师门任务按钮）。<br>
+        如果条件不成立，就跳过这个事件，去看下一个事件。
+    </div>
+
+    <div class="tip-box">
+        <strong>编辑器操作步骤：</strong>添加条件 → 变量控制 → 选择变量名 → 设置判断关系（等于/不等于/大于/小于等）→ 填入对比值
+    </div>
+
+    <div style="background:#f8f9fc; border-radius:12px; padding:20px; margin-top:10px;">
+        <h3 style="font-size:16px; color:#2c3e50; margin-bottom:12px;">条件判断流程演示</h3>
+        <div class="input-row" style="justify-content:center; margin-bottom:16px;">
+            <label style="font-size:13px; color:#666;">如果变量</label>
+            <select id="condVarSelect" style="width:120px"><option value="">请先创建变量</option></select>
+            <select id="condRelation" style="width:90px">
+                <option value="等于">等于</option>
+                <option value="不等于">不等于</option>
+                <option value="大于">大于</option>
+                <option value="小于">小于</option>
+                <option value="包含">包含</option>
+            </select>
+            <input type="text" id="condValue" placeholder="对比值" value="师门任务" style="width:120px">
+            <button class="orange" onclick="runConditionDemo()">执行判断</button>
+        </div>
+        <div class="flow-container">
+            <div class="flow-step condition" id="flowCond">
+                <div style="font-size:11px; color:#999;">条件</div>
+                <div id="flowCondText">变量 ? 等于 ?</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step action" id="flowAction">
+                <div style="font-size:11px; color:#999;">条件成立 → 执行动作</div>
+                <div>点击师门任务按钮</div>
+            </div>
+            <div class="flow-arrow" style="color:#ccc;">|</div>
+            <div class="flow-step skip" id="flowSkip">
+                <div style="font-size:11px; color:#999;">条件不成立 → 跳过</div>
+                <div>不执行，看下一个事件</div>
+            </div>
+        </div>
+        <div class="flow-result" id="flowResult" style="display:none;"></div>
+    </div>
+
+    <div class="code-block">
+<span class="cm">// 编辑器中的条件判断逻辑：</span>
+<span class="cm">// 事件一：执行师门任务</span>
+<span class="cm">//   条件：变量 当前任务 等于 师门任务  ← 看纸条写的什么</span>
+<span class="cm">//   动作：点击 师门任务按钮            ← 条件成立才执行</span>
+<span class="cm">// 事件二：执行捉鬼任务</span>
+<span class="cm">//   条件：变量 当前任务 等于 捉鬼任务  ← 换了一张纸条</span>
+<span class="cm">//   动作：点击 捉鬼任务按钮</span>
+    </div>
+</div>
+
+<!-- ===== SECTION 4: 什么是数组变量 ===== -->
+<div class="section" id="sec4">
+    <h2><span class="section-num green">4</span>什么是数组变量？—— 带格子的纸皮箱</h2>
+    <div class="desc green">
+        <strong>核心比喻：</strong>数组变量就像一个纸皮箱里面分了很多<strong>格子</strong>，每个格子放一张纸条。<br>
+        普通变量只能放一张纸条，数组变量可以放很多张！用竖线 <code>|</code> 分隔每个格子的内容。<br>
+        格式举例：<code>师门|捉鬼|副本|运镖|帮战|挖宝</code>，师门在第1位，捉鬼在第2位……以此类推。<br>
+        <strong>格子数量不固定！</strong>数组有多长就有多少个格子，你可以直接在下面输入任意数组。
+    </div>
+
+    <div class="box-container" style="margin-top:10px;">
+        <div class="array-box" id="arrayBox">
+            <div class="array-name-tag">📦 <span id="arrNameDisplay">任务列表</span></div>
+        </div>
+        <div class="value-display">
+            <span class="label">数组当前值：</span><span id="arrValueDisplay">（空）</span>
+        </div>
+        <div class="input-row" style="margin-top:14px; justify-content:center;">
+            <input type="text" id="arrayInput" placeholder="输入数组，用 | 分隔" value="师门|捉鬼|副本|运镖|帮战|挖宝" style="width:280px;">
+            <button class="green" onclick="applyArrayFromInput()">应用数组</button>
+            <button class="gray" onclick="clearArray()">清空数组</button>
+        </div>
+        <div style="text-align:center; font-size:12px; color:#999; margin-top:8px;">
+            💡 试试输入 <code>a|b|c</code> 或 <code>1|2|3|4|5|6|7</code>，格子数量会跟着变化！
+        </div>
+    </div>
+</div>
+
+<!-- ===== SECTION 5: 数组插件功能 ===== -->
+<div class="section" id="sec5">
+    <h2><span class="section-num green">5</span>数组插件功能演示 —— 可视化操作每个格子</h2>
+    <div class="desc green">
+        数组插件提供了对数组的各种操作功能。下面你可以<strong>亲手操作</strong>每个功能，看看数组怎么变化。<br>
+        点击下面的功能标签，选择你想体验的操作。每个操作都会显示<strong>操作前</strong>和<strong>操作后</strong>的对比。<br>
+        <strong>位置支持负数！</strong>-1 就是倒数第1个，-2 就是倒数第2个，和自动化编辑器里的数组插件完全一致。
+    </div>
+
+    <!-- Function Tabs -->
+    <div class="func-tabs" id="funcTabs">
+        <div class="func-tab active" onclick="switchFunc(event,'get')">获取指定位置值</div>
+        <div class="func-tab" onclick="switchFunc(event,'set')">设置指定位置值</div>
+        <div class="func-tab" onclick="switchFunc(event,'insert')">插入指定位置值</div>
+        <div class="func-tab" onclick="switchFunc(event,'delete')">删除指定位置值</div>
+        <div class="func-tab" onclick="switchFunc(event,'findPos')">值所在位置</div>
+        <div class="func-tab" onclick="switchFunc(event,'length')">数组长度</div>
+        <div class="func-tab" onclick="switchFunc(event,'dedup')">数组去重</div>
+        <div class="func-tab" onclick="switchFunc(event,'slice')">数组截取</div>
+        <div class="func-tab" onclick="switchFunc(event,'count')">元素计数</div>
+        <div class="func-tab" onclick="switchFunc(event,'clean')">空元素清理</div>
+        <div class="func-tab" onclick="switchFunc(event,'compare')">内容对比</div>
+        <div class="func-tab" onclick="switchFunc(event,'keyword')">关键词判断</div>
+        <div class="func-tab" onclick="switchFunc(event,'checkLen')">判断数组长度</div>
+        <div class="func-tab" onclick="switchFunc(event,'random')">随机数</div>
+    </div>
+
+    <!-- Panel: Get Value -->
+    <div class="func-panel active" id="panel-get">
+        <div class="func-desc">
+            <strong>获取指定位置值</strong>：从数组中读取某个位置的值。比如数组 <code>A|B|C|D</code>，获取第2位的值就是 <code>B</code>，获取 -1 位（倒数第1个）就是 <code>D</code>。<br>
+            编辑器里：添加动作 → 插件 → 加载数组插件 → 选择"获取指定位置值"。结果会存到变量"获取的值"里。
+        </div>
+        <div class="func-input-row">
+            <label>位置：</label>
+            <input type="number" id="getPos" value="2" style="width:80px">
+            <span class="pos-hint">支持负数：-1 = 倒数第1个</span>
+            <button class="green" onclick="execGetValue()">获取</button>
+        </div>
+        <div class="func-result info" id="result-get">点击"获取"按钮查看结果</div>
+        <div class="before-after" style="margin-top:12px;">
+            <div><div class="ba-label">当前数组</div><div class="ba-value" id="ba-get-before">（空）</div></div>
+            <div><div class="ba-label">获取到的值</div><div class="ba-value" id="ba-get-after">—</div></div>
+        </div>
+    </div>
+
+    <!-- Panel: Set Value -->
+    <div class="func-panel" id="panel-set">
+        <div class="func-desc">
+            <strong>设置指定位置值</strong>：把数组某个位置的内容改成新值。比如 <code>A|B|C</code>，设置第2位为"X"，变成 <code>A|X|C</code>。<br>
+            设置 -1 位为"X"，就是把最后一个格子改成"X"。编辑器里：选择"设置指定位置值"，结果存到变量"修改后的数组"。
+        </div>
+        <div class="func-input-row">
+            <label>位置：</label>
+            <input type="number" id="setPos" value="2" style="width:80px">
+            <span class="pos-hint">支持负数：-1 = 倒数第1个</span>
+            <label>新值：</label>
+            <input type="text" id="setVal" value="新任务" style="width:120px">
+            <button class="green" onclick="execSetValue()">设置</button>
+        </div>
+        <div class="func-result info" id="result-set">点击"设置"按钮查看结果</div>
+        <div class="before-after" style="margin-top:12px;">
+            <div><div class="ba-label">操作前数组</div><div class="ba-value" id="ba-set-before">（空）</div></div>
+            <div><div class="ba-label">操作后数组</div><div class="ba-value" id="ba-set-after">—</div></div>
+        </div>
+    </div>
+
+    <!-- Panel: Insert Value -->
+    <div class="func-panel" id="panel-insert">
+        <div class="func-desc">
+            <strong>插入指定位置值</strong>：在数组的指定位置插入一个新元素，后面的元素往后移。<br>
+            比如 <code>A|B|D</code>，在第3位插入"C"，变成 <code>A|B|C|D</code>。<br>
+            <strong>负数插入</strong>：插入 -1 位，就是在倒数第1个的<strong>后面</strong>插入（即追加到末尾）。比如 <code>A|B</code> 在 -1 位插入"C" → <code>A|B|C</code>。结果存到变量"修改后的数组"。
+        </div>
+        <div class="func-input-row">
+            <label>位置：</label>
+            <input type="number" id="insPos" value="3" style="width:80px">
+            <span class="pos-hint">支持负数：-1 = 末尾追加</span>
+            <label>插入值：</label>
+            <input type="text" id="insVal" value="C" style="width:120px">
+            <button class="green" onclick="execInsertValue()">插入</button>
+        </div>
+        <div class="func-result info" id="result-insert">点击"插入"按钮查看结果</div>
+        <div class="before-after" style="margin-top:12px;">
+            <div><div class="ba-label">操作前数组</div><div class="ba-value" id="ba-ins-before">（空）</div></div>
+            <div><div class="ba-label">操作后数组</div><div class="ba-value" id="ba-ins-after">—</div></div>
+        </div>
+    </div>
+
+    <!-- Panel: Delete Value -->
+    <div class="func-panel" id="panel-delete">
+        <div class="func-desc">
+            <strong>删除指定位置值</strong>：删掉数组某个位置的元素，后面的元素往前移。<br>
+            比如 <code>A|B|C|D</code>，删除第2位，变成 <code>A|C|D</code>。删除 -1 位，就是删掉最后一个。<br>
+            结果存到变量"修改后的数组"。
+        </div>
+        <div class="func-input-row">
+            <label>位置：</label>
+            <input type="number" id="delPos" value="2" style="width:80px">
+            <span class="pos-hint">支持负数：-1 = 倒数第1个</span>
+            <button class="red" onclick="execDeleteValue()">删除</button>
+        </div>
+        <div class="func-result info" id="result-delete">点击"删除"按钮查看结果</div>
+        <div class="before-after" style="margin-top:12px;">
+            <div><div class="ba-label">操作前数组</div><div class="ba-value" id="ba-del-before">（空）</div></div>
+            <div><div class="ba-label">操作后数组</div><div class="ba-value" id="ba-del-after">—</div></div>
+        </div>
+    </div>
+
+    <!-- Panel: Find Position -->
+    <div class="func-panel" id="panel-findPos">
+        <div class="func-desc">
+            <strong>值所在位置</strong>：查找某个值在数组中排第几位。<br>
+            比如 <code>A|B|C|D</code>，查找"C"的位置，结果是 <code>3</code>（第3位）。找不到返回-1。结果存到变量"值的位置"。
+        </div>
+        <div class="func-input-row">
+            <label>查找值：</label>
+            <input type="text" id="findVal" value="C" style="width:120px">
+            <button class="green" onclick="execFindPos()">查找</button>
+        </div>
+        <div class="func-result info" id="result-findPos">点击"查找"按钮查看结果</div>
+    </div>
+
+    <!-- Panel: Array Length -->
+    <div class="func-panel" id="panel-length">
+        <div class="func-desc">
+            <strong>数组长度</strong>：统计数组一共有几个元素。<br>
+            比如 <code>A|B|C|D|E</code> 的长度是 <code>5</code>。结果存到变量"数组长度"。
+        </div>
+        <div class="func-input-row">
+            <button class="green" onclick="execLength()">计算长度</button>
+        </div>
+        <div class="func-result info" id="result-length">点击按钮查看结果</div>
+    </div>
+
+    <!-- Panel: Deduplicate -->
+    <div class="func-panel" id="panel-dedup">
+        <div class="func-desc">
+            <strong>数组去重</strong>：去掉重复的元素，只保留第一次出现的。<br>
+            比如 <code>A|B|A|C|B</code> 去重后变成 <code>A|B|C</code>。结果存到变量"去重后的数组"。
+        </div>
+        <div class="func-input-row">
+            <button class="green" onclick="execDedup()">执行去重</button>
+        </div>
+        <div class="func-result info" id="result-dedup">点击按钮查看结果</div>
+        <div class="before-after" style="margin-top:12px;">
+            <div><div class="ba-label">操作前数组</div><div class="ba-value" id="ba-dedup-before">（空）</div></div>
+            <div><div class="ba-label">去重后数组</div><div class="ba-value" id="ba-dedup-after">—</div></div>
+        </div>
+    </div>
+
+    <!-- Panel: Slice -->
+    <div class="func-panel" id="panel-slice">
+        <div class="func-desc">
+            <strong>数组截取</strong>：从指定位置开始，截取一定长度的子数组。<br>
+            比如 <code>A|B|C|D|E</code>，从第2位开始截取3个，结果是 <code>B|C|D</code>。<br>
+            起始位置也支持负数：从 -1 开始截取1个，就是取最后一个。结果存到变量"截取后的数组"。
+        </div>
+        <div class="func-input-row">
+            <label>起始位置：</label>
+            <input type="number" id="sliceStart" value="2" style="width:80px">
+            <span class="pos-hint">支持负数：-1 = 倒数第1个</span>
+            <label>截取长度：</label>
+            <input type="number" id="sliceLen" value="3" style="width:80px">
+            <button class="green" onclick="execSlice()">截取</button>
+        </div>
+        <div class="func-result info" id="result-slice">点击按钮查看结果</div>
+        <div class="before-after" style="margin-top:12px;">
+            <div><div class="ba-label">操作前数组</div><div class="ba-value" id="ba-slice-before">（空）</div></div>
+            <div><div class="ba-label">截取后数组</div><div class="ba-value" id="ba-slice-after">—</div></div>
+        </div>
+    </div>
+
+    <!-- Panel: Count Element -->
+    <div class="func-panel" id="panel-count">
+        <div class="func-desc">
+            <strong>数组元素计数</strong>：统计某个元素在数组中出现了几次。<br>
+            比如 <code>A|B|A|C|A</code>，统计"A"出现次数，结果是 <code>3</code>。结果存到变量"元素出现次数"。
+        </div>
+        <div class="func-input-row">
+            <label>目标元素：</label>
+            <input type="text" id="countElem" value="A" style="width:120px">
+            <button class="green" onclick="execCount()">统计</button>
+        </div>
+        <div class="func-result info" id="result-count">点击按钮查看结果</div>
+    </div>
+
+    <!-- Panel: Clean Empty -->
+    <div class="func-panel" id="panel-clean">
+        <div class="func-desc">
+            <strong>数组空元素清理</strong>：清除数组中的空字符串或纯空格元素。<br>
+            比如 <code>A||B| |C</code> 清理后变成 <code>A|B|C</code>。结果存到变量"清理后的数组"。
+        </div>
+        <div class="func-input-row">
+            <label>清理类型：</label>
+            <select id="cleanType" style="width:150px">
+                <option value="仅空字符串">仅空字符串</option>
+                <option value="包含空格">包含空格</option>
+            </select>
+            <button class="green" onclick="execClean()">清理</button>
+        </div>
+        <div class="func-result info" id="result-clean">点击按钮查看结果</div>
+        <div class="before-after" style="margin-top:12px;">
+            <div><div class="ba-label">操作前数组</div><div class="ba-value" id="ba-clean-before">（空）</div></div>
+            <div><div class="ba-label">清理后数组</div><div class="ba-value" id="ba-clean-after">—</div></div>
+        </div>
+    </div>
+
+    <!-- Panel: Compare Content -->
+    <div class="func-panel" id="panel-compare">
+        <div class="func-desc">
+            <strong>数组内容对比</strong>：忽略顺序，判断两个数组的元素是否完全一样。<br>
+            比如 <code>A|B|C</code> 和 <code>C|B|A</code>，内容一样返回 true。这是条件型功能，返回布尔值。
+        </div>
+        <div class="func-input-row">
+            <label>数组1：</label>
+            <input type="text" id="cmpArr1" value="A|B|C" style="width:150px">
+            <label>数组2：</label>
+            <input type="text" id="cmpArr2" value="C|B|A" style="width:150px">
+            <button class="green" onclick="execCompare()">对比</button>
+        </div>
+        <div class="func-result info" id="result-compare">点击按钮查看结果</div>
+    </div>
+
+    <!-- Panel: Keyword Check -->
+    <div class="func-panel" id="panel-keyword">
+        <div class="func-desc">
+            <strong>数组关键词判断</strong>：检测字符串是否包含（或不包含）目标词数组中的任意一个词。<br>
+            比如：字符串"ABCDEF"，关键词"A|C|X"，匹配模式"包含"，结果为 true（包含A或C）。这是条件型功能。
+        </div>
+        <div class="func-input-row">
+            <label>检测字符串：</label>
+            <input type="text" id="kwStr" value="ABCDEF" style="width:120px">
+            <label>关键词：</label>
+            <input type="text" id="kwWords" value="A|C|X" style="width:120px">
+            <label>模式：</label>
+            <select id="kwMode" style="width:80px">
+                <option value="包含">包含</option>
+                <option value="不包含">不包含</option>
+            </select>
+            <button class="green" onclick="execKeyword()">判断</button>
+        </div>
+        <div class="func-result info" id="result-keyword">点击按钮查看结果</div>
+    </div>
+
+    <!-- Panel: Check Length Condition -->
+    <div class="func-panel" id="panel-checkLen">
+        <div class="func-desc">
+            <strong>判断数组长度</strong>：判断数组长度与指定长度的关系（大于/小于/等于等）。<br>
+            这是条件型功能，返回布尔值，可用于控制流程。
+        </div>
+        <div class="func-input-row">
+            <label>指定长度：</label>
+            <input type="number" id="chkLenTarget" value="3" min="0" style="width:80px">
+            <label>比较关系：</label>
+            <select id="chkLenRelation" style="width:100px">
+                <option value="等于">等于</option>
+                <option value="大于">大于</option>
+                <option value="小于">小于</option>
+                <option value="大于等于">大于等于</option>
+                <option value="小于等于">小于等于</option>
+            </select>
+            <button class="green" onclick="execCheckLen()">判断</button>
+        </div>
+        <div class="func-result info" id="result-checkLen">点击按钮查看结果</div>
+    </div>
+
+    <!-- Panel: Random Number -->
+    <div class="func-panel" id="panel-random">
+        <div class="func-desc">
+            <strong>随机数</strong>：在最小数和最大数之间生成一个随机数。<br>
+            比如：最小数1，最大数10，可能生成 7。结果存到变量"随机数"。<br>
+            <strong>编辑器用法</strong>：创建变量时选"随机变量"，每次运行自动随机，不用动作修改！
+        </div>
+        <div class="func-input-row">
+            <label>最小数：</label>
+            <input type="number" id="rndMin" value="1" style="width:80px">
+            <label>最大数：</label>
+            <input type="number" id="rndMax" value="10" style="width:80px">
+            <button class="purple" onclick="execRandom()">生成</button>
+        </div>
+        <div class="func-result info" id="result-random">点击按钮生成随机数</div>
+        <div class="tip-box" style="margin-top:10px;">
+            <strong>随机执行事件技巧：</strong>变量名"随机数"，区间1~4。事件一条件：变量随机数等于1；事件二条件：变量随机数等于2……这样就能随机执行不同事件了！
+        </div>
+    </div>
+</div>
+
+<!-- ===== SECTION 6: 实战应用 ===== -->
+<div class="section" id="sec6">
+    <h2><span class="section-num teal">6</span>实战应用：任务完成标记系统</h2>
+    <div class="desc">
+        <strong>场景：</strong>游戏里有3个任务（A、B、C），完成后把"任务名完成"加入数组变量。<br>
+        通过判断数组是否包含某个值，控制任务流程，避免重复执行。<br>
+        这就是自动化编辑器里<strong>变量作为条件</strong>和<strong>动作修改变量</strong>的实际应用。
+    </div>
+
+    <div class="task-grid" id="taskGrid">
+        <div class="task-item" id="task-A">
+            <div class="task-icon">⬜</div>
+            <div class="task-name">任务A</div>
+            <div class="task-status">未完成</div>
+            <button class="green" style="margin-top:8px;" onclick="taskDone('A')">完成任务A</button>
+        </div>
+        <div class="task-item" id="task-B">
+            <div class="task-icon">⬜</div>
+            <div class="task-name">任务B</div>
+            <div class="task-status">未完成</div>
+            <button class="green" style="margin-top:8px;" onclick="taskDone('B')">完成任务B</button>
+        </div>
+        <div class="task-item" id="task-C">
+            <div class="task-icon">⬜</div>
+            <div class="task-name">任务C</div>
+            <div class="task-status">未完成</div>
+            <button class="green" style="margin-top:8px;" onclick="taskDone('C')">完成任务C</button>
+        </div>
+    </div>
+
+    <div class="value-display" style="max-width:600px; margin:20px auto 0;">
+        <span class="label">已完成任务数组：</span><span id="taskArrayValue">空</span>
+    </div>
+
+    <div style="text-align:center; margin-top:16px;">
+        <button class="red" onclick="resetTasks()">重置所有任务</button>
+    </div>
+
+    <div id="taskCheckResult" style="text-align:center; margin-top:16px; color:#666; font-size:14px;">
+        💡 试试完成任务，看看数组变量怎么变化，条件怎么判断
+    </div>
+
+    <div class="code-block" style="margin-top:16px;">
+<span class="cm">// 实际编辑器中的事件设计：</span>
+<span class="cm">// 事件1：执行任务A</span>
+<span class="cm">//   条件：变量 已完成任务数组 不包含 A完成  ← 防止重复执行</span>
+<span class="cm">//   动作：点击任务A按钮</span>
+<span class="cm">//   动作：修改变量 已完成任务数组 = [原值]|A完成  ← 往数组加内容</span>
+<span class="cm">// 事件2：执行任务B</span>
+<span class="cm">//   条件：变量 已完成任务数组 不包含 B完成</span>
+<span class="cm">//   动作：点击任务B按钮</span>
+<span class="cm">//   动作：修改变量 已完成任务数组 = [原值]|B完成</span>
+    </div>
+</div>
+
+<!-- ===== SECTION 7: 变量自增演示 ===== -->
+<div class="section" id="sec7">
+    <h2><span class="section-num">7</span>变量自增 —— 控制执行次数</h2>
+    <div class="desc">
+        <strong>变量自增</strong>是自动化编辑器中非常常用的功能。每执行一次，变量值自动+1。<br>
+        比如控制某个事件只执行5次：默认值0，条件"变量次数小于5"，动作里加"变量次数自增"。<br>
+        第1次：0&lt;5成立，执行，0→1；第5次：4&lt;5成立，执行，4→5；第6次：5&lt;5不成立，跳过。
+    </div>
+
+    <div style="background:#f8f9fc; border-radius:12px; padding:24px; text-align:center;">
+        <div style="margin-bottom:16px;">
+            <span style="font-size:14px; color:#666;">变量"次数"当前值：</span>
+            <span id="counterValue" style="font-size:28px; font-weight:bold; color:#667eea;">0</span>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button onclick="counterExec()">执行一次</button>
+            <button class="orange" onclick="counterAuto()">自动执行5次</button>
+            <button class="red" onclick="counterReset()">重置为0</button>
+        </div>
+        <div id="counterLog" style="margin-top:14px; font-family:monospace; font-size:13px; color:#666; text-align:left; max-width:500px; margin-left:auto; margin-right:auto; min-height:60px;">
+            📝 等待执行...
+        </div>
+    </div>
+
+    <div class="code-block" style="margin-top:16px;">
+<span class="cm">// 编辑器中的设置：</span>
+<span class="cm">// 变量名：次数 | 默认值：0 | 类型：普通变量</span>
+<span class="cm">// 事件：执行某操作</span>
+<span class="cm">//   条件：变量 次数 小于 5     ← 只执行5次</span>
+<span class="cm">//   动作：[你的操作]</span>
+<span class="cm">//   动作：变量 次数 自增        ← 每次执行后+1</span>
+<span class="cm">// 注意：只有数字类型的变量才能自增！</span>
+    </div>
+</div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    <p>📦 变量 = 纸皮箱 | 数组变量 = 带格子的纸皮箱 | 值 = 纸条内容</p>
+    <p>条件 = 看纸条写的什么 | 动作修改 = 换纸条 | 变量自增 = 纸条上的数字+1</p>
+    <p style="margin-top:10px; opacity:0.5;">自动化编辑器变量与数组插件可视化教程 | 适合零基础新手学习</p>
+</div>
+
+<script>
+// ============================================================
+// SECTION 1: 单个变量演示（纸皮箱）
+// ============================================================
+let demoVarName = "当前任务";
+let demoVarValue = "";
+
+function updateBoxDisplay() {
+    const noteEl = document.getElementById('boxValue');
+    const nameEl = document.getElementById('boxNameDisplay');
+    const nameShow = document.getElementById('varNameShow');
+    const valueShow = document.getElementById('varValueShow');
+
+    nameEl.textContent = demoVarName;
+    nameShow.textContent = demoVarName;
+
+    if (demoVarValue === "") {
+        noteEl.textContent = "空箱子";
+        noteEl.classList.add('empty');
+        valueShow.textContent = "空";
+    } else {
+        noteEl.textContent = demoVarValue;
+        noteEl.classList.remove('empty');
+        valueShow.textContent = demoVarValue;
+    }
+}
+
+function putNoteDemo() {
+    const val = document.getElementById('boxValueInput').value.trim();
+    if (!val) { showToast('请输入纸条内容！'); return; }
+    demoVarValue = val;
+    updateBoxDisplay();
+    showToast(`已放入纸条"${val}"到箱子"${demoVarName}"`, 'success');
+}
+
+function editNoteDemo() {
+    const val = document.getElementById('boxValueInput').value.trim();
+    if (!val) { showToast('请输入新的纸条内容！'); return; }
+    if (demoVarValue === "") { showToast('箱子是空的，先放纸条吧！'); return; }
+    const oldVal = demoVarValue;
+    demoVarValue = val;
+    updateBoxDisplay();
+    showToast(`纸条从"${oldVal}"换成了"${val}"`, 'success');
+}
+
+function clearNoteDemo() {
+    if (demoVarValue === "") { showToast('箱子已经空了！'); return; }
+    const old = demoVarValue;
+    demoVarValue = "";
+    updateBoxDisplay();
+    showToast(`已取出纸条"${old}"`, 'success');
+}
+
+function renameBox() {
+    const name = document.getElementById('boxNameInput').value.trim();
+    if (!name) { showToast('请输入箱子名称！'); return; }
+    demoVarName = name;
+    updateBoxDisplay();
+    showToast(`箱子已改名为"${name}"`, 'success');
+}
+
+// ============================================================
+// SECTION 2: 变量管理面板（仿编辑器新建变量）
+// ============================================================
+let variables = [];
+let varIdCounter = 0;
+let selectedVarType = '变量';
+let selectedScope = '普通';
+
+function openNewVarModal() {
+    document.getElementById('newVarModal').classList.add('show');
+    document.getElementById('modalVarName').value = '';
+    document.getElementById('modalVarValue').value = '';
+    selectVarType(document.querySelector('#varTypeOptions .type-option.active'));
+}
+
+function closeNewVarModal() {
+    document.getElementById('newVarModal').classList.remove('show');
+}
+
+function selectVarType(el) {
+    document.querySelectorAll('#varTypeOptions .type-option').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    selectedVarType = el.dataset.type;
+    const randRange = document.getElementById('randRange');
+    if (selectedVarType === '随机') {
+        randRange.classList.add('show');
+    } else {
+        randRange.classList.remove('show');
+    }
+}
+
+function selectScope(el) {
+    document.querySelectorAll('.scope-option').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    selectedScope = el.textContent;
+}
+
+function confirmNewVar() {
+    const name = document.getElementById('modalVarName').value.trim();
+    const value = document.getElementById('modalVarValue').value.trim();
+    if (!name) { showToast('请输入变量名！'); return; }
+    if (variables.some(v => v.name === name)) { showToast('变量名已存在，请换个名字！'); return; }
+
+    let finalValue = value;
+    if (selectedVarType === '随机') {
+        const min = parseFloat(document.getElementById('randMin').value) || 1;
+        const max = parseFloat(document.getElementById('randMax').value) || 10;
+        const actualMin = Math.min(min, max), actualMax = Math.max(min, max);
+        finalValue = Math.floor(Math.random() * (actualMax - actualMin + 1)) + actualMin;
+        variables.push({ id: ++varIdCounter, name, value: String(finalValue), type: '随机', scope: selectedScope, randMin: actualMin, randMax: actualMax });
+    } else {
+        variables.push({ id: ++varIdCounter, name, value: finalValue, type: selectedVarType, scope: selectedScope });
+    }
+
+    closeNewVarModal();
+    renderVariables();
+    updateCondSelect();
+    showToast(`变量"${name}"创建成功！`, 'success');
+}
+
+function fillExampleVars() {
+    variables = [
+        { id: ++varIdCounter, name: "当前任务", value: "师门任务", type: "变量", scope: "普通" },
+        { id: ++varIdCounter, name: "方向", value: "下", type: "变量", scope: "普通" },
+        { id: ++varIdCounter, name: "次数", value: "0", type: "变量", scope: "普通" },
+        { id: ++varIdCounter, name: "已完成", value: "", type: "变量", scope: "本地" }
+    ];
+    renderVariables();
+    updateCondSelect();
+    showToast('已填充4个示例变量！', 'success');
+}
+
+function renderVariables() {
+    const grid = document.getElementById('varCardGrid');
+    if (variables.length === 0) {
+        grid.innerHTML = '<p style="color:#999; text-align:center; width:100%; padding:20px;">还没有变量，点击"新建变量"创建一个试试吧！</p>';
+    } else {
+        grid.innerHTML = variables.map(v => `
+            <div class="var-card" id="varcard-${v.id}">
+                <div class="var-type-tag ${v.type === '随机' ? 'random' : ''}">${v.type}${v.type === '变量' ? '' : ''}</div>
+                <div class="var-name">📦 ${v.name}</div>
+                <div class="var-value-box ${v.value === '' ? 'empty' : ''}" id="varval-${v.id}">${v.value === '' ? '空' : v.value}</div>
+                <input type="text" id="varinput-${v.id}" placeholder="新值" value="${v.value}" style="width:100%; margin-bottom:6px;">
+                <div class="var-actions">
+                    <button class="orange" onclick="modifyVariable(${v.id})">修改</button>
+                    <button class="red" onclick="deleteVariable(${v.id})">删除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    const allText = variables.map(v => `${v.name}="${v.value === '' ? '空' : v.value}"`).join('， ');
+    document.getElementById('allVarsText').textContent = allText || '无';
+}
+
+function modifyVariable(id) {
+    const v = variables.find(x => x.id === id);
+    if (!v) return;
+    const newVal = document.getElementById(`varinput-${id}`).value.trim();
+    const oldVal = v.value;
+    v.value = newVal;
+    const valEl = document.getElementById(`varval-${id}`);
+    valEl.textContent = newVal === '' ? '空' : newVal;
+    valEl.classList.toggle('empty', newVal === '');
+    renderVariables();
+    updateCondSelect();
+    showToast(`变量"${v.name}"从"${oldVal || '空'}"改为"${newVal || '空'}"`, 'success');
+}
+
+function deleteVariable(id) {
+    const v = variables.find(x => x.id === id);
+    if (!v) return;
+    variables = variables.filter(x => x.id !== id);
+    renderVariables();
+    updateCondSelect();
+    showToast(`变量"${v.name}"已删除`, 'success');
+}
+
+function updateCondSelect() {
+    const sel = document.getElementById('condVarSelect');
+    sel.innerHTML = variables.length === 0
+        ? '<option value="">请先创建变量</option>'
+        : variables.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
+}
+
+// ============================================================
+// SECTION 3: 条件判断演示
+// ============================================================
+function runConditionDemo() {
+    const varName = document.getElementById('condVarSelect').value;
+    const relation = document.getElementById('condRelation').value;
+    const compareVal = document.getElementById('condValue').value.trim();
+    const condText = document.getElementById('flowCondText');
+    const actionEl = document.getElementById('flowAction');
+    const skipEl = document.getElementById('flowSkip');
+    const resultEl = document.getElementById('flowResult');
+
+    if (!varName) {
+        showToast('请先在上方创建变量！');
+        resultEl.style.display = 'block';
+        resultEl.className = 'flow-result fail';
+        resultEl.textContent = '⚠️ 请先创建变量！';
+        return;
+    }
+
+    const v = variables.find(x => x.name === varName);
+    const varVal = v ? v.value : '';
+    condText.textContent = `变量 ${varName} ${relation} ${compareVal}`;
+
+    let matched = false;
+    switch (relation) {
+        case '等于': matched = varVal === compareVal; break;
+        case '不等于': matched = varVal !== compareVal; break;
+        case '大于': matched = parseFloat(varVal) > parseFloat(compareVal); break;
+        case '小于': matched = parseFloat(varVal) < parseFloat(compareVal); break;
+        case '包含': matched = varVal.includes(compareVal); break;
+    }
+
+    if (matched) {
+        actionEl.classList.add('active');
+        skipEl.classList.remove('active');
+        resultEl.style.display = 'block';
+        resultEl.className = 'flow-result success';
+        resultEl.textContent = `✅ 条件成立！变量"${varName}"的值是"${varVal}"，${relation}"${compareVal}" → 执行动作`;
+    } else {
+        skipEl.classList.add('active');
+        actionEl.classList.remove('active');
+        resultEl.style.display = 'block';
+        resultEl.className = 'flow-result fail';
+        resultEl.textContent = `❌ 条件不成立！变量"${varName}"的值是"${varVal}"，不${relation}"${compareVal}" → 跳过此事件`;
+    }
+
+    setTimeout(() => {
+        actionEl.classList.remove('active');
+        skipEl.classList.remove('active');
+    }, 2000);
+}
+
+// ============================================================
+// SECTION 4 & 5: 数组变量与数组插件功能（动态长度 + 负数位置）
+// ============================================================
+let arrayData = ["师门", "捉鬼", "副本", "运镖", "帮战", "挖宝"];
+const DELIMITER = "|";
+
+function renderArray() {
+    const box = document.getElementById('arrayBox');
+    box.innerHTML = '';
+    const tag = document.createElement('div');
+    tag.className = 'array-name-tag';
+    tag.innerHTML = '📦 <span id="arrNameDisplay">任务列表</span>';
+    box.appendChild(tag);
+    arrayData.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'array-cell';
+        cell.innerHTML = `<div class="index">第${i + 1}位</div><div class="paper-note ${val === '' ? 'empty' : ''}">${val === '' ? '空' : val}</div>`;
+        box.appendChild(cell);
+    });
+    const displayStr = arrayData.map(v => v === "" ? "空" : v).join('|');
+    document.getElementById('arrValueDisplay').textContent = displayStr;
+}
+
+function getArrayString() {
+    return arrayData.map(v => v || "").join(DELIMITER);
+}
+
+function parseArray(str, delimiter) {
+    if (!str) return [];
+    return str.split(delimiter);
+}
+
+function applyArrayFromInput() {
+    const input = document.getElementById('arrayInput').value.trim();
+    if (input === '') {
+        arrayData = [];
+    } else {
+        arrayData = input.split('|');
+    }
+    renderArray();
+    updateBeforeAfter();
+    showToast('数组已更新！', 'success');
+}
+
+function clearArray() {
+    arrayData = [];
+    document.getElementById('arrayInput').value = '';
+    renderArray();
+    updateBeforeAfter();
+    showToast('数组已清空！', 'success');
+}
+
+// 位置换算：把"第几位/负数"换算成数组索引（0-based）
+// 正数：1 → 0；负数：-1 → 倒数第1个（length-1）
+function resolveIndex(pos, len) {
+    let idx;
+    if (pos < 0) {
+        idx = len + pos;
+    } else {
+        idx = pos - 1;
+    }
+    return idx;
+}
+
+// Function Tab Switching
+function switchFunc(ev, funcName) {
+    document.querySelectorAll('.func-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.func-panel').forEach(p => p.classList.remove('active'));
+    ev.target.classList.add('active');
+    document.getElementById(`panel-${funcName}`).classList.add('active');
+    updateBeforeAfter();
+}
+
+function updateBeforeAfter() {
+    const displayStr = arrayData.map(v => v === "" ? "空" : v).join('|');
+    document.querySelectorAll('[id$="-before"]').forEach(el => {
+        el.textContent = displayStr === '' ? '（空）' : displayStr;
+    });
+}
+
+// --- 获取指定位置值 ---
+function execGetValue() {
+    const pos = parseInt(document.getElementById('getPos').value);
+    const parts = arrayData.slice();
+    if (isNaN(pos) || pos === 0) {
+        showResult('get', 'error', '❌ 位置不能为0！请输入正整数（从前往后）或负整数（从后往前）');
+        return;
+    }
+    const idx = resolveIndex(pos, parts.length);
+    if (idx < 0 || idx >= parts.length) {
+        showResult('get', 'error', `❌ 位置${pos}超出范围！数组共${parts.length}个元素，可输入1~${parts.length}或-${parts.length}~-1`);
+        return;
+    }
+    const val = parts[idx];
+    showResult('get', 'success', `✅ 第${pos}位的值是：${val === '' ? '空' : val}`);
+    updateBA('get', getArrayString(), val === '' ? '空' : val);
+    highlightCell(idx, 'highlight');
+}
+
+// --- 设置指定位置值 ---
+function execSetValue() {
+    const pos = parseInt(document.getElementById('setPos').value);
+    const val = document.getElementById('setVal').value.trim();
+    const before = getArrayString();
+    const parts = arrayData.slice();
+    if (isNaN(pos) || pos === 0) {
+        showResult('set', 'error', '❌ 位置不能为0！');
+        return;
+    }
+    const idx = resolveIndex(pos, parts.length);
+    if (idx < 0 || idx >= parts.length) {
+        showResult('set', 'error', `❌ 位置${pos}超出范围！数组共${parts.length}个元素`);
+        return;
+    }
+    const oldVal = parts[idx];
+    parts[idx] = val;
+    arrayData = parts;
+    renderArray();
+    showResult('set', 'success', `✅ 第${pos}位从"${oldVal || '空'}"改为"${val}"`);
+    updateBA('set', before, getArrayString());
+    highlightCell(idx, 'highlight');
+}
+
+// --- 插入指定位置值（负数：-1 在末尾追加）---
+function execInsertValue() {
+    const pos = parseInt(document.getElementById('insPos').value);
+    const val = document.getElementById('insVal').value.trim();
+    const before = getArrayString();
+    const parts = arrayData.slice();
+    if (isNaN(pos) || pos === 0) {
+        showResult('insert', 'error', '❌ 位置不能为0！请输入正整数（第几位）或负整数（-1=末尾追加）');
+        return;
+    }
+    let actualIndex;
+    if (pos < 0) {
+        actualIndex = parts.length + pos + 1;
+        if (actualIndex < 0 || actualIndex > parts.length) {
+            showResult('insert', 'error', `❌ 插入位置${pos}超出范围！`);
+            return;
+        }
+    } else {
+        actualIndex = pos - 1;
+        if (actualIndex < 0 || actualIndex > parts.length) {
+            showResult('insert', 'error', `❌ 位置${pos}超出范围！可插入位置1~${parts.length + 1}`);
+            return;
+        }
+    }
+    parts.splice(actualIndex, 0, val);
+    arrayData = parts;
+    renderArray();
+    showResult('insert', 'success', `✅ 已插入"${val}"到第${pos}位`);
+    updateBA('ins', before, getArrayString());
+    highlightCell(actualIndex, 'highlight-insert');
+}
+
+// --- 删除指定位置值 ---
+function execDeleteValue() {
+    const pos = parseInt(document.getElementById('delPos').value);
+    const before = getArrayString();
+    const parts = arrayData.slice();
+    if (isNaN(pos) || pos === 0) {
+        showResult('delete', 'error', '❌ 位置不能为0！');
+        return;
+    }
+    const idx = resolveIndex(pos, parts.length);
+    if (idx < 0 || idx >= parts.length) {
+        showResult('delete', 'error', `❌ 位置${pos}超出范围！数组共${parts.length}个元素`);
+        return;
+    }
+    const deleted = parts.splice(idx, 1)[0];
+    arrayData = parts;
+    renderArray();
+    showResult('delete', 'success', `✅ 已删除第${pos}位的"${deleted || '空'}"`);
+    updateBA('del', before, getArrayString());
+}
+
+// --- 值所在位置 ---
+function execFindPos() {
+    const val = document.getElementById('findVal').value.trim();
+    const parts = arrayData.slice();
+    const index = parts.indexOf(val);
+    if (index === -1) {
+        showResult('findPos', 'error', `❌ 未找到值"${val}"在数组中（返回-1）`);
+    } else {
+        showResult('findPos', 'success', `✅ 值"${val}"在数组中排第${index + 1}位`);
+        highlightCell(index, 'highlight');
+    }
+}
+
+// --- 数组长度 ---
+function execLength() {
+    const parts = arrayData.slice();
+    showResult('length', 'success', `✅ 数组长度为：${parts.length}（共${parts.length}个元素）`);
+}
+
+// --- 数组去重 ---
+function execDedup() {
+    const before = getArrayString();
+    const parts = arrayData.slice();
+    const uniqueArr = [...new Set(parts)];
+    arrayData = uniqueArr;
+    renderArray();
+    const removed = parts.length - uniqueArr.length;
+    showResult('dedup', 'success', `✅ 去重完成！移除了${removed}个重复元素`);
+    updateBA('dedup', before, getArrayString());
+}
+
+// --- 数组截取（起始位置支持负数）---
+function execSlice() {
+    const start = parseInt(document.getElementById('sliceStart').value);
+    let len = parseInt(document.getElementById('sliceLen').value);
+    const before = getArrayString();
+    const parts = arrayData.slice();
+    if (isNaN(start) || start === 0) {
+        showResult('slice', 'error', '❌ 起始位置不能为0！请输入正整数（从前往后）或负整数（从后往前）');
+        return;
+    }
+    let actualStart;
+    if (start > 0) {
+        actualStart = start - 1;
+    } else {
+        actualStart = parts.length + start;
+    }
+    if (actualStart < 0 || actualStart >= parts.length) {
+        showResult('slice', 'error', `❌ 起始位置${start}超出范围！数组共${parts.length}个元素`);
+        return;
+    }
+    if (isNaN(len) || len < 1) len = 1;
+    const sliced = parts.slice(actualStart, actualStart + len);
+    const result = sliced.join(DELIMITER);
+    showResult('slice', 'success', `✅ 从第${start}位开始截取${len}个，结果：${result}`);
+    updateBA('slice', before, result);
+    for (let i = actualStart; i < actualStart + len && i < parts.length; i++) {
+        highlightCell(i, 'highlight');
+    }
+}
+
+// --- 元素计数 ---
+function execCount() {
+    const elem = document.getElementById('countElem').value.trim();
+    const parts = arrayData.slice();
+    const count = parts.filter(e => e.trim() === elem.trim()).length;
+    showResult('count', 'success', `✅ 元素"${elem}"在数组中出现了${count}次`);
+}
+
+// --- 空元素清理 ---
+function execClean() {
+    const cleanType = document.getElementById('cleanType').value;
+    const before = getArrayString();
+    const parts = arrayData.slice();
+    let cleaned;
+    if (cleanType === '仅空字符串') {
+        cleaned = parts.filter(e => e !== '');
+    } else {
+        cleaned = parts.filter(e => e.trim() !== '');
+    }
+    arrayData = cleaned;
+    renderArray();
+    const removed = parts.length - cleaned.length;
+    showResult('clean', 'success', `✅ 清理了${removed}个空元素（${cleanType}）`);
+    updateBA('clean', before, getArrayString());
+}
+
+// --- 数组内容对比 ---
+function execCompare() {
+    const arr1 = document.getElementById('cmpArr1').value.trim();
+    const arr2 = document.getElementById('cmpArr2').value.trim();
+    const sorted1 = arr1.split(DELIMITER).sort().join(DELIMITER);
+    const sorted2 = arr2.split(DELIMITER).sort().join(DELIMITER);
+    const match = sorted1 === sorted2;
+    if (match) {
+        showResult('compare', 'success', `✅ 两个数组内容一致（忽略顺序）！返回 true`);
+    } else {
+        showResult('compare', 'error', `❌ 两个数组内容不一致！返回 false`);
+    }
+}
+
+// --- 关键词判断 ---
+function execKeyword() {
+    const str = document.getElementById('kwStr').value.trim();
+    const wordsStr = document.getElementById('kwWords').value.trim();
+    const mode = document.getElementById('kwMode').value;
+    const words = wordsStr.split(DELIMITER).map(w => w.trim()).filter(w => w);
+    const isInclude = words.some(w => str.includes(w));
+    const result = mode === '包含' ? isInclude : !isInclude;
+    const matchedWords = words.filter(w => str.includes(w));
+    if (result) {
+        showResult('keyword', 'success', `✅ ${mode}判断成立！返回 true。匹配到的词：${matchedWords.length > 0 ? matchedWords.join(', ') : '无'}`);
+    } else {
+        showResult('keyword', 'error', `❌ ${mode}判断不成立！返回 false`);
+    }
+}
+
+// --- 判断数组长度 ---
+function execCheckLen() {
+    const target = parseInt(document.getElementById('chkLenTarget').value);
+    const relation = document.getElementById('chkLenRelation').value;
+    const actualLen = arrayData.length;
+    let match = false;
+    switch (relation) {
+        case '等于': match = actualLen === target; break;
+        case '大于': match = actualLen > target; break;
+        case '小于': match = actualLen < target; break;
+        case '大于等于': match = actualLen >= target; break;
+        case '小于等于': match = actualLen <= target; break;
+    }
+    if (match) {
+        showResult('checkLen', 'success', `✅ 判断成立！数组长度${actualLen} ${relation} ${target} → 返回 true`);
+    } else {
+        showResult('checkLen', 'error', `❌ 判断不成立！数组长度${actualLen} 不${relation} ${target} → 返回 false`);
+    }
+}
+
+// --- 随机数 ---
+function execRandom() {
+    const min = parseInt(document.getElementById('rndMin').value);
+    const max = parseInt(document.getElementById('rndMax').value);
+    if (isNaN(min) || isNaN(max)) {
+        showResult('random', 'error', '❌ 请输入有效数字！');
+        return;
+    }
+    const actualMin = Math.min(min, max);
+    const actualMax = Math.max(min, max);
+    const rnd = Math.floor(Math.random() * (actualMax - actualMin + 1)) + actualMin;
+    showResult('random', 'success', `✅ 生成的随机数是：${rnd}（范围${actualMin}~${actualMax}）`);
+}
+
+// Helper: Show Result
+function showResult(funcName, type, msg) {
+    const el = document.getElementById(`result-${funcName}`);
+    el.className = `func-result ${type}`;
+    el.textContent = msg;
+}
+
+// Helper: Update Before/After
+function updateBA(prefix, before, after) {
+    const beforeEl = document.getElementById(`ba-${prefix}-before`);
+    const afterEl = document.getElementById(`ba-${prefix}-after`);
+    if (beforeEl) beforeEl.textContent = before === '' ? '（空）' : before.split(DELIMITER).map(v => v === '' ? '空' : v).join('|');
+    if (afterEl) {
+        afterEl.textContent = after === '' ? '（空）' : after.split(DELIMITER).map(v => v === '' ? '空' : v).join('|');
+        afterEl.classList.add('changed');
+        setTimeout(() => afterEl.classList.remove('changed'), 2000);
+    }
+}
+
+// Helper: Highlight Cell
+function highlightCell(index, className) {
+    const cells = document.querySelectorAll('#arrayBox .array-cell');
+    if (cells[index]) {
+        cells[index].classList.add(className);
+        setTimeout(() => cells[index].classList.remove(className), 1500);
+    }
+}
+
+// ============================================================
+// SECTION 6: 任务完成演示
+// ============================================================
+let taskList = [];
+
+function taskDone(taskName) {
+    const label = taskName + '完成';
+    if (taskList.includes(label)) {
+        showToast(`任务${taskName}已经完成了！`);
+        return;
+    }
+    taskList.push(label);
+    updateTaskDisplay();
+    const item = document.getElementById(`task-${taskName}`);
+    item.classList.add('done');
+    item.querySelector('.task-icon').textContent = '✅';
+    item.querySelector('.task-status').textContent = '已完成';
+    showToast(`任务${taskName}完成！已加入数组`, 'success');
+
+    const checkEl = document.getElementById('taskCheckResult');
+    if (taskList.length === 3) {
+        checkEl.innerHTML = '🎉 所有任务完成！数组变量 = A完成|B完成|C完成';
+        checkEl.style.color = '#27ae60';
+    } else if (taskList.length === 1) {
+        checkEl.innerHTML = `✅ 数组现在包含1个任务：${taskList.join('|')}。条件"数组包含A完成" = ${taskList.includes('A完成')}`;
+        checkEl.style.color = '#666';
+    } else {
+        checkEl.innerHTML = `✅ 数组现在包含${taskList.length}个任务：${taskList.join('|')}`;
+        checkEl.style.color = '#666';
+    }
+}
+
+function updateTaskDisplay() {
+    document.getElementById('taskArrayValue').textContent = taskList.length === 0 ? '空' : taskList.join('|');
+}
+
+function resetTasks() {
+    taskList = [];
+    ['A', 'B', 'C'].forEach(t => {
+        const item = document.getElementById(`task-${t}`);
+        item.classList.remove('done');
+        item.querySelector('.task-icon').textContent = '⬜';
+        item.querySelector('.task-status').textContent = '未完成';
+    });
+    updateTaskDisplay();
+    document.getElementById('taskCheckResult').innerHTML = '💡 试试完成任务，看看数组变量怎么变化，条件怎么判断';
+    document.getElementById('taskCheckResult').style.color = '#666';
+    showToast('所有任务已重置！', 'success');
+}
+
+// ============================================================
+// SECTION 7: 变量自增演示
+// ============================================================
+let counterVal = 0;
+let counterMax = 5;
+
+function updateCounterDisplay() {
+    document.getElementById('counterValue').textContent = counterVal;
+}
+
+function counterExec() {
+    if (counterVal >= counterMax) {
+        document.getElementById('counterLog').innerHTML += `<div>❌ 次数${counterVal} 不小于 ${counterMax}，条件不成立，跳过！</div>`;
+        showToast('已达上限，条件不成立了！');
+        return;
+    }
+    document.getElementById('counterLog').innerHTML += `<div>✅ 条件：次数${counterVal} < ${counterMax} 成立 → 执行动作 → 变量自增 ${counterVal}→${counterVal + 1}</div>`;
+    counterVal++;
+    updateCounterDisplay();
+    if (counterVal >= counterMax) {
+        document.getElementById('counterLog').innerHTML += `<div style="color:#e74c3c; font-weight:bold;">⚠️ 次数已达到${counterVal}，下次条件${counterVal}<${counterMax}将不成立，不再执行！</div>`;
+    }
+}
+
+function counterAuto() {
+    counterReset();
+    let i = 0;
+    const interval = setInterval(() => {
+        counterExec();
+        i++;
+        if (i >= counterMax + 1) clearInterval(interval);
+    }, 600);
+}
+
+function counterReset() {
+    counterVal = 0;
+    updateCounterDisplay();
+    document.getElementById('counterLog').innerHTML = '📝 等待执行...\n';
+}
+
+// ============================================================
+// Toast Notification
+// ============================================================
+function showToast(msg, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        background: ${type === 'success' ? '#27ae60' : '#e74c3c'};
+        color: #fff; padding: 10px 24px; border-radius: 8px;
+        font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        animation: toastIn 0.3s ease;
+    `;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2200);
+}
+
+// Add toast animation
+const style = document.createElement('style');
+style.textContent = `@keyframes toastIn { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }`;
+document.head.appendChild(style);
+
+// ============================================================
+// Initialize
+// ============================================================
+updateBoxDisplay();
+renderVariables();
+renderArray();
+updateCondSelect();
+updateBeforeAfter();
+
+// 点击遮罩关闭弹窗
+document.getElementById('newVarModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('newVarModal')) closeNewVarModal();
+});
+
+// Esc 关闭弹窗
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNewVarModal();
+});
+
+// Smooth scroll for nav
+document.querySelectorAll('.nav-bar a').forEach(a => {
+    a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+});
+</script>
+
+</body></html>
